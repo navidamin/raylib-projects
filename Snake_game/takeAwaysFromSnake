@@ -1,0 +1,86 @@
+
+
+1. Defining the window:
+
+int cellSize = 30;	// pixel size of each cell
+// each cell will encapsule one unit of snake body and one fruit
+int cellCount = 25;	// numebr of total cells in the screen (screen size)
+int offset = 75; // pixel distance of offset
+
+2. Initiating the game in main()
+
+int main() {
+    cout << "Starting the game ..." << endl;
+    InitWindow(2*offset + cellSize * cellCount, 2 * offset + cellSize * cellCount, "Retro Snake");
+    SetTargetFPS(60);
+
+    // to close the intitiated window:
+        CloseWindow();
+
+
+2. an standlone function  for checking event triggers
+
+bool EventTriggered(double interval) {
+    double currentTime = GetTime();
+    if (currentTime - lastUpdateTime >= interval) {
+        lastUpdateTime = currentTime;
+        return true;
+    }
+    return false;
+}
+
+3. define retangles and draw them
+
+Rectangle segment = Rectangle{offset + x * cellSize, offset + y * cellSize, (float)cellSize, (float)cellSize};
+DrawRectangleRounded(segment, 0.5, 6, darkGreen);
+
+4. Using image as Texture2D
+
+    Texture2D texture;
+    ...
+        Image image = LoadImage("Graphics/food.png");
+        texture = LoadTextureFromImage(image);
+        UnloadImage(image);
+
+    // Texture should later be unloaded
+        ~Food() {
+        UnloadTexture(texture);
+    }
+
+5. draw texture
+    void Draw()
+    {
+        DrawTexture(texture, offset + position.x * cellSize, offset + position.y * cellSize, WHITE);
+    }
+
+6. Sound manipualtion functions
+    Game() {
+        InitAudioDevice();
+        eatSound = LoadSound("Sounds/eat.mp3");
+        wallSound = LoadSound("Sounds/wall.mp3");
+    }
+
+    ~Game() {
+        UnloadSound(eatSound);
+        UnloadSound(wallSound);
+        CloseAudioDevice();
+    }
+
+    
+    PlaySound(eatSound);
+
+7. Check if key pressed
+
+	IsKeyPressed(KEY_UP)
+
+8. Drawing
+        // Drawing
+        ClearBackground(green);
+        DrawRectangleLinesEx(Rectangle{(float)offset - 5, (float)offset - 5, (float)cellSize * cellCount + 10, (float)cellSize * cellCount + 10}, 5, darkGreen);
+        DrawText("Retro Snake", offset - 5, 20 , 40 , darkGreen);
+        DrawText(TextFormat("%i", game.score), offset - 5, offset + cellSize * cellCount + 10, 40, darkGreen);
+        game.Draw();
+
+        EndDrawing();	
+
+Vector2Equals(deque[i], element)	// raylib function to compare two Vector2
