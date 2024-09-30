@@ -11,9 +11,21 @@ struct Node {
     float radius;
     std::vector<Node*> children;
     Node* parent;
+    int level;
 
-    Node(Vector2 pos, float r, Node* p = nullptr) : position(pos), radius(r), parent(p) {}
+    Node(Vector2 pos, float r, Node* p = nullptr, int lvl = 0)
+        : position(pos), radius(r), parent(p), level(lvl) {}
 };
+
+Color GetNodeColor(int level) {
+    switch (level) {
+        case 0: return (Color){ 116, 79, 198, 255 };   // 744fc6 (Root)
+        case 1: return (Color){ 79, 134, 198, 255 };   // 4f86c6 (First level children)
+        case 2: return (Color){ 79, 176, 198, 255 };   // 4fb0c6 (Second level children)
+        case 3: return (Color){ 55, 147, 146, 255 };   // 379392 (Third level children)
+        default: return (Color){ 23, 48, 28, 255 };    // 17301c (Fourth level and beyond)
+    }
+}
 
 bool CheckCollisionPointOval(Vector2 point, Vector2 center, float radiusH, float radiusV, float expansion = 1.0f) {
     float dx = point.x - center.x;
@@ -40,10 +52,9 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
     }
 
     // Draw node
-    DrawEllipse(node->position.x, node->position.y, node->radius, node->radius * 0.75f,
-                node->parent ? PINK : SKYBLUE);
-    // Distinugish child and root nodes by label(temporary)
-    DrawText(node->parent ? "Child" : "Root", node->position.x - 25, node->position.y - 10, 20, DARKGRAY);
+    Color nodeColor = GetNodeColor(node->level);
+    DrawEllipse(node->position.x, node->position.y, node->radius, node->radius * 0.75f, nodeColor);
+    DrawText(node->level == 0 ? "Root" : "Child", node->position.x - 25, node->position.y - 10, 20, WHITE);
 
     // Draw add points and check for hover
     if (node == hoverNode) {
@@ -57,13 +68,13 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
             DrawCircleV(circlePos, 5, pointColor);
 
             if (CheckCollisionPointCircle(mousePos, circlePos, 5)) {
-                DrawText("Add Child", mousePos.x + 10, mousePos.y + 10, 20, DARKGRAY);
+                DrawText("Add Child", mousePos.x + 10, mousePos.y + 10, 20, BLACK);
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !*addPointClicked) {
                     Vector2 newPos = {
                         node->position.x + cosf(angle) * node->radius * 2,
                         node->position.y + sinf(angle) * node->radius * 1.5f
                     };
-                    Node* newNode = new Node(newPos, node->radius * 0.8f, node);
+                    Node* newNode = new Node(newPos, node->radius * 0.8f, node, node->level + 1);
                     node->children.push_back(newNode);
                     *addPointClicked = true;
                 }
