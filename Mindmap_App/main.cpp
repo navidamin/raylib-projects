@@ -65,7 +65,41 @@ Node* FindNodeAtPosition(Node* root, Vector2 position) {
     return nullptr;
 }
 
-void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked) {
+bool IsPointOnLine(Vector2 point, Vector2 lineStart, Vector2 lineEnd, float threshold = 5.0f) {
+    float d1 = Vector2Distance(point, lineStart);
+    float d2 = Vector2Distance(point, lineEnd);
+    float lineLen = Vector2Distance(lineStart, lineEnd);
+    return (d1 + d2 >= lineLen - threshold) && (d1 + d2 <= lineLen + threshold);
+}
+
+void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& connections) {
+    // Remove all connections to this node
+    connections.erase(
+        std::remove_if(connections.begin(), connections.end(),
+            [nodeToRemove](const Connection& conn) {
+                return conn.start == nodeToRemove || conn.end == nodeToRemove;
+            }
+        ),
+        connections.end()
+    );
+
+    // Remove this node from its parent's children
+    if (nodeToRemove->parent) {
+        auto it = std::find(nodeToRemove->parent->children.begin(), nodeToRemove->parent->children.end(), nodeToRemove);
+        if (it != nodeToRemove->parent->children.end()) {
+            nodeToRemove->parent->children.erase(it);
+        }
+    }
+
+    // Recursively remove all children
+    for (Node* child : nodeToRemove->children) {
+        RemoveNodeAndConnections(child, connections);
+    }
+
+    // Delete the node
+    delete nodeToRemove;
+}
+
 void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked, 
                          std::vector<Connection>& connections, Node** draggingNode, Node** potentialParent) {
     // Draw connections
@@ -141,11 +175,14 @@ int main() {
     std::vector<Connection> connections;
 
     while (!WindowShouldClose()) {
-        // Update
         Vector2 mousePos = GetMousePosition();
 
-        // Find the node under the mouse
         hoverNode = FindNodeAtPosition(root, mousePos);
+
+        // Update connection hover state
+        for (auto& conn : connections) {
+            conn.isHovered = IsPointOnLine(mousePos, conn.start->position, conn.end->position);
+        }
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             selectedNode = hoverNode;
@@ -181,17 +218,43 @@ int main() {
             draggingNode = nullptr;
             potentialParent = nullptr;
         }
+
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            if (hoverNode && hoverNode != root) {
+                RemoveNodeAndConnections(hoverNode, connections);
+                hoverNode = nullptr;
+            } else {
+                for (auto& conn : connections) {
+                    if (conn.isHovered) {
+                        auto it = std::find(conn.start->children.begin(), conn.start->children.end(), conn.end);
+                        if (it != conn.start->children.end()) {
+                            conn.start->children.erase(it);
+                        }
+                        conn.end->parent = nullptr;
+                        connections.erase(std::find(connections.begin(), connections.end(), conn));
+                        break;
+                    }
+                }
+            }
         }
 
         if (selectedNode) {
             selectedNode->position = {mousePos.x - offset.x, mousePos.y - offset.y};
         }
 
-        // Drawing
+        if (draggingNode) {
+            potentialParent = FindNodeAtPosition(root, mousePos);
+            if (potentialParent == draggingNode) potentialParent = nullptr;
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        DrawNodeAndChildren(root, hoverNode, mousePos, &addPointClicked);
+        DrawNodeAndChildren(root, hoverNode, mousePos, &addPointClicked, connections, &draggingNode, &potentialParent);
+
+        if (draggingNode && potentialParent) {
+            DrawLineBezier(draggingNode->position, potentialParent->position, 2, GREEN);
+        }
 
         EndDrawing();
     }
