@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <algorithm>
 
 const int screenWidth = 800;
 const int screenHeight = 600;
@@ -12,10 +13,29 @@ struct Node {
     std::vector<Node*> children;
     Node* parent;
     int level;
-
-    Node(Vector2 pos, float r, Node* p = nullptr, int lvl = 0)
+    
+    Node(Vector2 pos, float r, Node* p = nullptr, int lvl = 0) 
         : position(pos), radius(r), parent(p), level(lvl) {}
 };
+
+struct Connection {
+    Node* start;
+    Node* end;
+    bool isHovered;
+
+    Connection(Node* s, Node* e) : start(s), end(e), isHovered(false) {}
+
+    // Add equality operator
+    bool operator==(const Connection& other) const {
+        return start == other.start && end == other.end;
+    }
+};
+
+float Vector2Distance(Vector2 v1, Vector2 v2) {
+    float dx = v2.x - v1.x;
+    float dy = v2.y - v1.y;
+    return sqrt(dx*dx + dy*dy);
+}
 
 Color GetNodeColor(int level) {
     switch (level) {
@@ -30,7 +50,7 @@ Color GetNodeColor(int level) {
 bool CheckCollisionPointOval(Vector2 point, Vector2 center, float radiusH, float radiusV, float expansion = 1.0f) {
     float dx = point.x - center.x;
     float dy = point.y - center.y;
-    return (dx * dx) / ((radiusH * expansion) * (radiusH * expansion)) +
+    return (dx * dx) / ((radiusH * expansion) * (radiusH * expansion)) + 
            (dy * dy) / ((radiusV * expansion) * (radiusV * expansion)) <= 1.0f;
 }
 
@@ -46,9 +66,27 @@ Node* FindNodeAtPosition(Node* root, Vector2 position) {
 }
 
 void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked) {
+void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked, 
+                         std::vector<Connection>& connections, Node** draggingNode, Node** potentialParent) {
     // Draw connections
-    for (Node* child : node->children) {
-        DrawLineBezier(node->position, child->position, 2, GRAY);
+    for (auto& conn : connections) {
+        if (conn.start == node) {
+            Color lineColor = conn.isHovered ? RED : GRAY;
+            DrawLineBezier(conn.start->position, conn.end->position, 2, lineColor);
+            
+            if (conn.isHovered) {
+                DrawCircleV(conn.start->position, 5, BLUE);
+                DrawCircleV(conn.end->position, 5, BLUE);
+
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    if (CheckCollisionPointCircle(mousePos, conn.start->position, 5)) {
+                        *draggingNode = conn.start;
+                    } else if (CheckCollisionPointCircle(mousePos, conn.end->position, 5)) {
+                        *draggingNode = conn.end;
+                    }
+                }
+            }
+        }
     }
 
     // Draw node
@@ -66,7 +104,7 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
             };
             Color pointColor = CheckCollisionPointCircle(mousePos, circlePos, 5) ? GREEN : RED;
             DrawCircleV(circlePos, 5, pointColor);
-
+            
             if (CheckCollisionPointCircle(mousePos, circlePos, 5)) {
                 DrawText("Add Child", mousePos.x + 10, mousePos.y + 10, 20, BLACK);
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !*addPointClicked) {
@@ -76,6 +114,7 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
                     };
                     Node* newNode = new Node(newPos, node->radius * 0.8f, node, node->level + 1);
                     node->children.push_back(newNode);
+                    connections.push_back(Connection(node, newNode));
                     *addPointClicked = true;
                 }
             }
@@ -84,7 +123,7 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
 
     // Recursively draw children
     for (Node* child : node->children) {
-        DrawNodeAndChildren(child, hoverNode, mousePos, addPointClicked);
+        DrawNodeAndChildren(child, hoverNode, mousePos, addPointClicked, connections, draggingNode, potentialParent);
     }
 }
 
@@ -95,8 +134,11 @@ int main() {
     Node* root = new Node({screenWidth / 2.0f, screenHeight / 2.0f}, 60);
     Node* selectedNode = nullptr;
     Node* hoverNode = nullptr;
+    Node* draggingNode = nullptr;
+    Node* potentialParent = nullptr;
     Vector2 offset;
     bool addPointClicked = false;
+    std::vector<Connection> connections;
 
     while (!WindowShouldClose()) {
         // Update
@@ -114,7 +156,31 @@ int main() {
         }
 
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            if (draggingNode && potentialParent) {
+                // Reconnect the dragged node to the new parent
+                connections.erase(
+                    std::remove_if(connections.begin(), connections.end(),
+                        [draggingNode](const Connection& conn) {
+                            return conn.end == draggingNode;
+                        }
+                    ),
+                    connections.end()
+                );
+                connections.push_back(Connection(potentialParent, draggingNode));
+
+                if (draggingNode->parent) {
+                    auto it = std::find(draggingNode->parent->children.begin(), draggingNode->parent->children.end(), draggingNode);
+                    if (it != draggingNode->parent->children.end()) {
+                        draggingNode->parent->children.erase(it);
+                    }
+                }
+                draggingNode->parent = potentialParent;
+                potentialParent->children.push_back(draggingNode);
+            }
             selectedNode = nullptr;
+            draggingNode = nullptr;
+            potentialParent = nullptr;
+        }
         }
 
         if (selectedNode) {
