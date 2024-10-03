@@ -3,19 +3,24 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <cstring>
 
 const int screenWidth = 800;
 const int screenHeight = 600;
+const int MAX_INPUT_CHARS = 100;
 
 struct Node {
     Vector2 position;
-    float radius;
+    float width;
+    float height;
     std::vector<Node*> children;
     Node* parent;
     int level;
-    
-    Node(Vector2 pos, float r, Node* p = nullptr, int lvl = 0) 
-        : position(pos), radius(r), parent(p), level(lvl) {}
+    std::string text;
+    bool isEditing;
+
+    Node(Vector2 pos, float w, float h, Node* p = nullptr, int lvl = 0)
+        : position(pos), width(w), height(h), parent(p), level(lvl), text("Node"), isEditing(false) {}
 };
 
 struct Connection {
@@ -25,7 +30,6 @@ struct Connection {
 
     Connection(Node* s, Node* e) : start(s), end(e), isHovered(false) {}
 
-    // Add equality operator
     bool operator==(const Connection& other) const {
         return start == other.start && end == other.end;
     }
@@ -47,15 +51,16 @@ Color GetNodeColor(int level) {
     }
 }
 
-bool CheckCollisionPointOval(Vector2 point, Vector2 center, float radiusH, float radiusV, float expansion = 1.0f) {
-    float dx = point.x - center.x;
-    float dy = point.y - center.y;
-    return (dx * dx) / ((radiusH * expansion) * (radiusH * expansion)) + 
-           (dy * dy) / ((radiusV * expansion) * (radiusV * expansion)) <= 1.0f;
+bool CheckCollisionPointOval(Vector2 point, Vector2 center, float width, float height, float expansion = 1.0f) {
+    float a = width / 2 * expansion;
+    float b = height / 2 * expansion;
+    float x = point.x - center.x;
+    float y = point.y - center.y;
+    return (x*x)/(a*a) + (y*y)/(b*b) <= 1.0f;
 }
 
 Node* FindNodeAtPosition(Node* root, Vector2 position) {
-    if (CheckCollisionPointOval(position, root->position, root->radius, root->radius * 0.75f, 1.2f)) {
+    if (CheckCollisionPointOval(position, root->position, root->width, root->height, 1.2f)) {
         return root;
     }
     for (Node* child : root->children) {
@@ -73,7 +78,6 @@ bool IsPointOnLine(Vector2 point, Vector2 lineStart, Vector2 lineEnd, float thre
 }
 
 void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& connections) {
-    // Remove all connections to this node
     connections.erase(
         std::remove_if(connections.begin(), connections.end(),
             [nodeToRemove](const Connection& conn) {
@@ -83,7 +87,6 @@ void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& conne
         connections.end()
     );
 
-    // Remove this node from its parent's children
     if (nodeToRemove->parent) {
         auto it = std::find(nodeToRemove->parent->children.begin(), nodeToRemove->parent->children.end(), nodeToRemove);
         if (it != nodeToRemove->parent->children.end()) {
@@ -91,23 +94,26 @@ void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& conne
         }
     }
 
-    // Recursively remove all children
     for (Node* child : nodeToRemove->children) {
         RemoveNodeAndConnections(child, connections);
     }
 
-    // Delete the node
     delete nodeToRemove;
 }
 
-void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked, 
+void UpdateNodeSize(Node* node) {
+    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), 20, 1);
+    node->width = std::max(textSize.x + 40, 100.0f);  // Minimum width of 100
+    node->height = std::max(textSize.y + 20, 60.0f);  // Minimum height of 60
+}
+
+void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked,
                          std::vector<Connection>& connections, Node** draggingNode, Node** potentialParent) {
-    // Draw connections
     for (auto& conn : connections) {
         if (conn.start == node) {
             Color lineColor = conn.isHovered ? RED : GRAY;
             DrawLineBezier(conn.start->position, conn.end->position, 2, lineColor);
-            
+
             if (conn.isHovered) {
                 DrawCircleV(conn.start->position, 5, BLUE);
                 DrawCircleV(conn.end->position, 5, BLUE);
@@ -123,30 +129,28 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
         }
     }
 
-    // Draw node
     Color nodeColor = GetNodeColor(node->level);
-    DrawEllipse(node->position.x, node->position.y, node->radius, node->radius * 0.75f, nodeColor);
-    DrawText(node->level == 0 ? "Root" : "Child", node->position.x - 25, node->position.y - 10, 20, WHITE);
+    DrawEllipse(node->position.x, node->position.y, node->width/2, node->height/2, nodeColor);
+    DrawText(node->text.c_str(), node->position.x - node->width/2 + 10, node->position.y - 10, 20, WHITE);
 
-    // Draw add points and check for hover
-    if (node == hoverNode) {
+    if (node == hoverNode && !node->isEditing) {
         for (int i = 0; i < 4; i++) {
             float angle = i * (PI / 2);
             Vector2 circlePos = {
-                node->position.x + cosf(angle) * node->radius,
-                node->position.y + sinf(angle) * node->radius * 0.75f
+                node->position.x + cosf(angle) * node->width/2,
+                node->position.y + sinf(angle) * node->height/2
             };
             Color pointColor = CheckCollisionPointCircle(mousePos, circlePos, 5) ? GREEN : RED;
             DrawCircleV(circlePos, 5, pointColor);
-            
+
             if (CheckCollisionPointCircle(mousePos, circlePos, 5)) {
                 DrawText("Add Child", mousePos.x + 10, mousePos.y + 10, 20, BLACK);
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !*addPointClicked) {
                     Vector2 newPos = {
-                        node->position.x + cosf(angle) * node->radius * 2,
-                        node->position.y + sinf(angle) * node->radius * 1.5f
+                        node->position.x + cosf(angle) * node->width,
+                        node->position.y + sinf(angle) * node->height
                     };
-                    Node* newNode = new Node(newPos, node->radius * 0.8f, node, node->level + 1);
+                    Node* newNode = new Node(newPos, 100, 60, node, node->level + 1);
                     node->children.push_back(newNode);
                     connections.push_back(Connection(node, newNode));
                     *addPointClicked = true;
@@ -155,7 +159,6 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
         }
     }
 
-    // Recursively draw children
     for (Node* child : node->children) {
         DrawNodeAndChildren(child, hoverNode, mousePos, addPointClicked, connections, draggingNode, potentialParent);
     }
@@ -165,36 +168,49 @@ int main() {
     InitWindow(screenWidth, screenHeight, "Mindmap App");
     SetTargetFPS(60);
 
-    Node* root = new Node({screenWidth / 2.0f, screenHeight / 2.0f}, 60);
+    Node* root = new Node({screenWidth / 2.0f, screenHeight / 2.0f}, 100, 60);
     Node* selectedNode = nullptr;
     Node* hoverNode = nullptr;
     Node* draggingNode = nullptr;
     Node* potentialParent = nullptr;
+    Node* editingNode = nullptr;
     Vector2 offset;
     bool addPointClicked = false;
     std::vector<Connection> connections;
+
+    char* editBuffer = new char[MAX_INPUT_CHARS + 1];
+    editBuffer[0] = '\0';
 
     while (!WindowShouldClose()) {
         Vector2 mousePos = GetMousePosition();
 
         hoverNode = FindNodeAtPosition(root, mousePos);
 
-        // Update connection hover state
         for (auto& conn : connections) {
             conn.isHovered = IsPointOnLine(mousePos, conn.start->position, conn.end->position);
         }
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (editingNode) {
+                editingNode->isEditing = false;
+                editingNode->text = editBuffer;
+                UpdateNodeSize(editingNode);
+                editingNode = nullptr;
+            }
             selectedNode = hoverNode;
             if (selectedNode) {
                 offset = {mousePos.x - selectedNode->position.x, mousePos.y - selectedNode->position.y};
+                if (IsKeyDown(KEY_LEFT_CONTROL)) {
+                    selectedNode->isEditing = true;
+                    editingNode = selectedNode;
+                    strcpy(editBuffer, selectedNode->text.c_str());
+                }
             }
             addPointClicked = false;
         }
 
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
             if (draggingNode && potentialParent) {
-                // Reconnect the dragged node to the new parent
                 connections.erase(
                     std::remove_if(connections.begin(), connections.end(),
                         [draggingNode](const Connection& conn) {
@@ -247,6 +263,30 @@ int main() {
             if (potentialParent == draggingNode) potentialParent = nullptr;
         }
 
+        if (editingNode) {
+            int key = GetCharPressed();
+            while (key > 0) {
+                if ((key >= 32) && (key <= 125) && (strlen(editBuffer) < MAX_INPUT_CHARS)) {
+                    int len = strlen(editBuffer);
+                    editBuffer[len] = (char)key;
+                    editBuffer[len + 1] = '\0';
+                }
+                key = GetCharPressed();
+            }
+
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                int len = strlen(editBuffer);
+                if (len > 0) editBuffer[len - 1] = '\0';
+            }
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                editingNode->isEditing = false;
+                editingNode->text = editBuffer;
+                UpdateNodeSize(editingNode);
+                editingNode = nullptr;
+            }
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -256,9 +296,18 @@ int main() {
             DrawLineBezier(draggingNode->position, potentialParent->position, 2, GREEN);
         }
 
+        if (editingNode) {
+            DrawRectangle(editingNode->position.x - editingNode->width/2,
+                          editingNode->position.y - editingNode->height/2,
+                          editingNode->width, editingNode->height, WHITE);
+            DrawText(editBuffer, editingNode->position.x - editingNode->width/2 + 10,
+                     editingNode->position.y - 10, 20, BLACK);
+        }
+
         EndDrawing();
     }
 
+    delete[] editBuffer;
     CloseWindow();
     return 0;
 }
