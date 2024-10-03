@@ -35,6 +35,13 @@ struct Connection {
     }
 };
 
+Camera2D camera = { 0 };
+float zoom = 1.0f;
+
+Vector2 GetWorldMousePosition() {
+    return GetScreenToWorld2D(GetMousePosition(), camera);
+}
+
 float Vector2Distance(Vector2 v1, Vector2 v2) {
     float dx = v2.x - v1.x;
     float dy = v2.y - v1.y;
@@ -77,6 +84,12 @@ bool IsPointOnLine(Vector2 point, Vector2 lineStart, Vector2 lineEnd, float thre
     return (d1 + d2 >= lineLen - threshold) && (d1 + d2 <= lineLen + threshold);
 }
 
+void UpdateNodeSize(Node* node) {
+    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), 20, 1);
+    node->width = std::max(textSize.x + 40, 100.0f);  // Minimum width of 100
+    node->height = std::max(textSize.y + 20, 60.0f);  // Minimum height of 60
+}
+
 void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& connections) {
     connections.erase(
         std::remove_if(connections.begin(), connections.end(),
@@ -101,27 +114,21 @@ void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& conne
     delete nodeToRemove;
 }
 
-void UpdateNodeSize(Node* node) {
-    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), 20, 1);
-    node->width = std::max(textSize.x + 40, 100.0f);  // Minimum width of 100
-    node->height = std::max(textSize.y + 20, 60.0f);  // Minimum height of 60
-}
-
 void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked,
                          std::vector<Connection>& connections, Node** draggingNode, Node** potentialParent) {
     for (auto& conn : connections) {
         if (conn.start == node) {
             Color lineColor = conn.isHovered ? RED : GRAY;
-            DrawLineBezier(conn.start->position, conn.end->position, 2, lineColor);
+            DrawLineBezier(conn.start->position, conn.end->position, 2 / zoom, lineColor);
 
             if (conn.isHovered) {
-                DrawCircleV(conn.start->position, 5, BLUE);
-                DrawCircleV(conn.end->position, 5, BLUE);
+                DrawCircleV(conn.start->position, 5 / zoom, BLUE);
+                DrawCircleV(conn.end->position, 5 / zoom, BLUE);
 
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                    if (CheckCollisionPointCircle(mousePos, conn.start->position, 5)) {
+                    if (CheckCollisionPointCircle(mousePos, conn.start->position, 5 / zoom)) {
                         *draggingNode = conn.start;
-                    } else if (CheckCollisionPointCircle(mousePos, conn.end->position, 5)) {
+                    } else if (CheckCollisionPointCircle(mousePos, conn.end->position, 5 / zoom)) {
                         *draggingNode = conn.end;
                     }
                 }
@@ -131,7 +138,9 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
 
     Color nodeColor = GetNodeColor(node->level);
     DrawEllipse(node->position.x, node->position.y, node->width/2, node->height/2, nodeColor);
-    DrawText(node->text.c_str(), node->position.x - node->width/2 + 10, node->position.y - 10, 20, WHITE);
+    DrawTextEx(GetFontDefault(), node->text.c_str(),
+               {node->position.x - node->width/2 + 10, node->position.y - 10},
+               20 / zoom, 1 / zoom, WHITE);
 
     if (node == hoverNode && !node->isEditing) {
         for (int i = 0; i < 4; i++) {
@@ -140,17 +149,18 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
                 node->position.x + cosf(angle) * node->width/2,
                 node->position.y + sinf(angle) * node->height/2
             };
-            Color pointColor = CheckCollisionPointCircle(mousePos, circlePos, 5) ? GREEN : RED;
-            DrawCircleV(circlePos, 5, pointColor);
+            Color pointColor = CheckCollisionPointCircle(mousePos, circlePos, 5 / zoom) ? GREEN : RED;
+            DrawCircleV(circlePos, 5 / zoom, pointColor);
 
-            if (CheckCollisionPointCircle(mousePos, circlePos, 5)) {
-                DrawText("Add Child", mousePos.x + 10, mousePos.y + 10, 20, BLACK);
+            if (CheckCollisionPointCircle(mousePos, circlePos, 5 / zoom)) {
+                DrawText("Add Child", mousePos.x + 10 / zoom, mousePos.y + 10 / zoom, 20 / zoom, BLACK);
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !*addPointClicked) {
                     Vector2 newPos = {
                         node->position.x + cosf(angle) * node->width,
                         node->position.y + sinf(angle) * node->height
                     };
                     Node* newNode = new Node(newPos, 100, 60, node, node->level + 1);
+                    UpdateNodeSize(newNode);
                     node->children.push_back(newNode);
                     connections.push_back(Connection(node, newNode));
                     *addPointClicked = true;
@@ -168,7 +178,12 @@ int main() {
     InitWindow(screenWidth, screenHeight, "Mindmap App");
     SetTargetFPS(60);
 
-    Node* root = new Node({screenWidth / 2.0f, screenHeight / 2.0f}, 100, 60);
+    camera.zoom = 1.0f;
+    camera.offset = (Vector2){ screenWidth/2.0f, screenHeight/2.0f };
+    camera.target = (Vector2){ 0, 0 };
+
+    Node* root = new Node({0, 0}, 100, 60);
+    UpdateNodeSize(root);
     Node* selectedNode = nullptr;
     Node* hoverNode = nullptr;
     Node* draggingNode = nullptr;
@@ -182,7 +197,20 @@ int main() {
     editBuffer[0] = '\0';
 
     while (!WindowShouldClose()) {
-        Vector2 mousePos = GetMousePosition();
+        Vector2 mousePos = GetWorldMousePosition();
+
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0) {
+            camera.zoom += wheel * 0.05f;
+            if (camera.zoom < 0.1f) camera.zoom = 0.1f;
+            if (camera.zoom > 3.0f) camera.zoom = 3.0f;
+        }
+
+        if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON)) {
+            Vector2 delta = GetMouseDelta();
+            camera.target.x -= delta.x / camera.zoom;
+            camera.target.y -= delta.y / camera.zoom;
+        }
 
         hoverNode = FindNodeAtPosition(root, mousePos);
 
@@ -290,24 +318,33 @@ int main() {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
+        BeginMode2D(camera);
+
         DrawNodeAndChildren(root, hoverNode, mousePos, &addPointClicked, connections, &draggingNode, &potentialParent);
 
         if (draggingNode && potentialParent) {
-            DrawLineBezier(draggingNode->position, potentialParent->position, 2, GREEN);
+            DrawLineBezier(draggingNode->position, potentialParent->position, 2 / zoom, GREEN);
         }
 
         if (editingNode) {
             DrawRectangle(editingNode->position.x - editingNode->width/2,
                           editingNode->position.y - editingNode->height/2,
                           editingNode->width, editingNode->height, WHITE);
-            DrawText(editBuffer, editingNode->position.x - editingNode->width/2 + 10,
-                     editingNode->position.y - 10, 20, BLACK);
+            DrawTextEx(GetFontDefault(), editBuffer,
+                       {editingNode->position.x - editingNode->width/2 + 10, editingNode->position.y - 10},
+                       20 / zoom, 1 / zoom, BLACK);
         }
+
+        EndMode2D();
+
+        DrawText(TextFormat("Zoom: %.2f", camera.zoom), 10, 10, 20, BLACK);
 
         EndDrawing();
     }
 
     delete[] editBuffer;
+    // TODO: Implement proper cleanup for all nodes
+
     CloseWindow();
     return 0;
 }
