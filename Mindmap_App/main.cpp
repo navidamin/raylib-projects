@@ -138,9 +138,14 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
 
     Color nodeColor = GetNodeColor(node->level);
     DrawEllipse(node->position.x, node->position.y, node->width/2, node->height/2, nodeColor);
-    DrawTextEx(GetFontDefault(), node->text.c_str(),
-               {node->position.x - node->width/2 + 10, node->position.y - 10},
-               20 / zoom, 1 / zoom, WHITE);
+
+    // Center the text
+    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), 20 / zoom, 1 / zoom);
+    Vector2 textPosition = {
+        node->position.x - textSize.x / 2,
+        node->position.y - textSize.y / 2
+    };
+    DrawTextEx(GetFontDefault(), node->text.c_str(), textPosition, 20 / zoom, 1 / zoom, WHITE);
 
     if (node == hoverNode && !node->isEditing) {
         for (int i = 0; i < 4; i++) {
@@ -330,9 +335,14 @@ int main() {
             DrawRectangle(editingNode->position.x - editingNode->width/2,
                           editingNode->position.y - editingNode->height/2,
                           editingNode->width, editingNode->height, WHITE);
-            DrawTextEx(GetFontDefault(), editBuffer,
-                       {editingNode->position.x - editingNode->width/2 + 10, editingNode->position.y - 10},
-                       20 / zoom, 1 / zoom, BLACK);
+
+            // Center the editing text
+            Vector2 textSize = MeasureTextEx(GetFontDefault(), editBuffer, 20 / zoom, 1 / zoom);
+            Vector2 textPosition = {
+                editingNode->position.x - textSize.x / 2,
+                editingNode->position.y - textSize.y / 2
+            };
+            DrawTextEx(GetFontDefault(), editBuffer, textPosition, 20 / zoom, 1 / zoom, BLACK);
         }
 
         EndMode2D();
