@@ -22,9 +22,19 @@ struct Node {
     int level;
     std::string text;
     bool isEditing;
+    float sizeFactor;  // New member to store the size factor
 
     Node(Vector2 pos, float w, float h, Node* p = nullptr, int lvl = 0)
-        : position(pos), width(w), height(h), parent(p), level(lvl), text("Node"), isEditing(false) {}
+        : position(pos), width(w), height(h), parent(p), level(lvl), text("Node"), isEditing(false) {
+        // Calculate size factor based on level
+        if (lvl == 0) {
+            sizeFactor = 1.0f;  // Root node
+        } else if (lvl == 1) {
+            sizeFactor = 0.85f;  // First level children
+        } else {
+            sizeFactor = parent->sizeFactor * 0.95f;  // Subsequent levels
+        }
+    }
 };
 
 struct Connection {
@@ -109,12 +119,6 @@ bool IsPointOnLine(Vector2 point, Vector2 lineStart, Vector2 lineEnd, float thre
     return (d1 + d2 >= lineLen - threshold) && (d1 + d2 <= lineLen + threshold);
 }
 
-void UpdateNodeSize(Node* node) {
-    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), 20, 1);
-    node->width = std::max(textSize.x + 40, 100.0f);  // Minimum width of 100
-    node->height = std::max(textSize.y + 20, 60.0f);  // Minimum height of 60
-}
-
 void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& connections) {
     connections.erase(
         std::remove_if(connections.begin(), connections.end(),
@@ -137,6 +141,12 @@ void RemoveNodeAndConnections(Node* nodeToRemove, std::vector<Connection>& conne
     }
 
     delete nodeToRemove;
+}
+
+void UpdateNodeSize(Node* node) {
+    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), 20, 1);
+    node->width = std::max(textSize.x + 40, 100.0f) * node->sizeFactor;  // Apply size factor
+    node->height = std::max(textSize.y + 20, 60.0f) * node->sizeFactor;  // Apply size factor
 }
 
 void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* addPointClicked,
@@ -164,13 +174,14 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
     Color nodeColor = GetNodeColor(node->level);
     DrawEllipse(node->position.x, node->position.y, node->width/2, node->height/2, nodeColor);
 
-    // Center the text
-    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), 20 / zoom, 1 / zoom);
+    // Center the text and scale it according to the node's size factor
+    float fontSize = 20 * node->sizeFactor;
+    Vector2 textSize = MeasureTextEx(GetFontDefault(), node->text.c_str(), fontSize, 1);
     Vector2 textPosition = {
         node->position.x - textSize.x / 2,
         node->position.y - textSize.y / 2
     };
-    DrawTextEx(GetFontDefault(), node->text.c_str(), textPosition, 20 / zoom, 1 / zoom, WHITE);
+    DrawTextEx(GetFontDefault(), node->text.c_str(), textPosition, fontSize, 1, WHITE);
 
     if (node == hoverNode && !node->isEditing) {
         for (int i = 0; i < 4; i++) {
@@ -197,7 +208,7 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
                 }
             }
         }
-    }
+    } // end  if (node == hoverNode && !node->isEditing)
 
     for (Node* child : node->children) {
         DrawNodeAndChildren(child, hoverNode, mousePos, addPointClicked, connections, draggingNode, potentialParent);
