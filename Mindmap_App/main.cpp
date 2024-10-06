@@ -5,6 +5,10 @@
 #include <algorithm>
 #include <cstring>
 
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 const int screenWidth = 800;
 const int screenHeight = 600;
 const int MAX_INPUT_CHARS = 100;
@@ -289,10 +293,21 @@ void SaveScreenshot(int size, int format, Node* root, const std::vector<Connecti
     Image image = LoadImageFromTexture(target.texture);
     ImageFlipVertical(&image);
 
+    const char* filename = (format == 0) ? "mindmap_screenshot.png" : "mindmap_screenshot.jpg";
+    bool success = false;
+
     if (format == 0) {
-        ExportImage(image, "mindmap_screenshot.png");
+        // PNG format
+        success = ExportImage(image, filename);
     } else {
-        ExportImage(image, "mindmap_screenshot.jpg");
+        // JPG format
+        success = stbi_write_jpg(filename, image.width, image.height, 4, image.data, 90);
+    }
+
+    if (success) {
+        printf("Screenshot saved as %s\n", filename);
+    } else {
+        printf("Failed to save screenshot as %s\n", filename);
     }
 
     UnloadImage(image);
