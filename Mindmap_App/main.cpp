@@ -244,7 +244,7 @@ void CalculateMindmapBounds(Node* root, Vector2& minBounds, Vector2& maxBounds) 
     CalculateNodeBounds(root, minBounds, maxBounds);
 }
 
-void SaveScreenshot(int size, int format, Node* root, const std::vector<Connection>& connections) {
+void SaveScreenshot(int size, int format, Node* root, const std::vector<Connection>& connections, float currentZoom) {
     // Calculate the bounds of the entire mindmap
     Vector2 minBounds, maxBounds;
     CalculateMindmapBounds(root, minBounds, maxBounds);
@@ -258,18 +258,22 @@ void SaveScreenshot(int size, int format, Node* root, const std::vector<Connecti
     mindmapWidth += 2 * padding;
     mindmapHeight += 2 * padding;
 
-    // Calculate the aspect ratio of the mindmap and the screen
+    // Calculate the base size adjusted for zoom
+    int baseWidth = static_cast<int>(screenWidth / currentZoom);
+    int baseHeight = static_cast<int>(screenHeight / currentZoom);
+
+    // Calculate the aspect ratio of the mindmap and the base size
     float mindmapAspectRatio = mindmapWidth / mindmapHeight;
-    float screenAspectRatio = (float)screenWidth / screenHeight;
+    float baseAspectRatio = static_cast<float>(baseWidth) / baseHeight;
 
     // Determine the dimensions of the render texture
     int textureWidth, textureHeight;
-    if (mindmapAspectRatio > screenAspectRatio) {
-        textureWidth = screenWidth * size;
-        textureHeight = (int)(textureWidth / mindmapAspectRatio);
+    if (mindmapAspectRatio > baseAspectRatio) {
+        textureWidth = baseWidth * size;
+        textureHeight = static_cast<int>(textureWidth / mindmapAspectRatio);
     } else {
-        textureHeight = screenHeight * size;
-        textureWidth = (int)(textureHeight * mindmapAspectRatio);
+        textureHeight = baseHeight * size;
+        textureWidth = static_cast<int>(textureHeight * mindmapAspectRatio);
     }
 
     RenderTexture2D target = LoadRenderTexture(textureWidth, textureHeight);
@@ -277,7 +281,7 @@ void SaveScreenshot(int size, int format, Node* root, const std::vector<Connecti
     ClearBackground(RAYWHITE);
 
     Camera2D saveCamera = { 0 };
-    saveCamera.zoom = std::min((float)textureWidth / mindmapWidth, (float)textureHeight / mindmapHeight);
+    saveCamera.zoom = std::min(static_cast<float>(textureWidth) / mindmapWidth, static_cast<float>(textureHeight) / mindmapHeight);
     saveCamera.offset = (Vector2){ textureWidth/2.0f, textureHeight/2.0f };
     saveCamera.target = (Vector2){ (minBounds.x + maxBounds.x) / 2, (minBounds.y + maxBounds.y) / 2 };
 
@@ -305,7 +309,7 @@ void SaveScreenshot(int size, int format, Node* root, const std::vector<Connecti
     }
 
     if (success) {
-        printf("Screenshot saved as %s\n", filename);
+        printf("Screenshot saved as %s (Size: %dx%d)\n", filename, image.width, image.height);
     } else {
         printf("Failed to save screenshot as %s\n", filename);
     }
@@ -365,11 +369,14 @@ int main() {
                 }
             }
             Rectangle saveConfirmButton = { screenWidth - 120, 160, 100, 40 };
-            if (CheckCollisionPointRec(screenMousePos, saveConfirmButton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                 SaveScreenshot(saveOptions.selectedSize, saveOptions.selectedFormat, root, connections);
-                 saveOptions.isOpen = false;
-                 interactedWithUI = true;
-             }
+            if (saveOptions.isOpen) {
+                Rectangle saveConfirmButton = { screenWidth - 120, 160, 100, 40 };
+                if (CheckCollisionPointRec(screenMousePos, saveConfirmButton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    SaveScreenshot(saveOptions.selectedSize, saveOptions.selectedFormat, root, connections, camera.zoom);
+                    saveOptions.isOpen = false;
+                    interactedWithUI = true;
+                }
+            }
         } // end (saveOptions.isOpen)
 
         if (!interactedWithUI) {
