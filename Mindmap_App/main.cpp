@@ -330,6 +330,33 @@ void SaveScreenshot(int size, int format, Node* root, const std::vector<Connecti
 }
 
 
+void DrawLegend() {
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+
+    // Define legend box dimensions and position
+    int boxWidth = 200;
+    int boxHeight = 70;
+    int padding = 10;
+    int fontSize = 15;
+
+    Rectangle legendBox = {
+        static_cast<float>(screenWidth - boxWidth - padding),
+        static_cast<float>(screenHeight - boxHeight - padding),
+        static_cast<float>(boxWidth),
+        static_cast<float>(boxHeight)
+    };
+
+    // Draw semi-transparent background
+    DrawRectangleRec(legendBox, ColorAlpha(BLACK, 0.7f));
+
+    // Draw legend text
+    Vector2 textPos = { legendBox.x + 10, legendBox.y + 10 };
+    DrawText("Controls:", textPos.x, textPos.y, fontSize, WHITE);
+    DrawText("Ctrl + Left Click: Edit Label", textPos.x, textPos.y + fontSize + 5, fontSize, WHITE);
+    DrawText("Right Click: Remove Node", textPos.x, textPos.y + 2 * (fontSize + 5), fontSize, WHITE);
+}
+
 int main() {
     InitWindow(screenWidth, screenHeight, "Mindmap App");
     SetTargetFPS(60);
@@ -541,6 +568,9 @@ int main() {
 
         // Draw save options (including the always-visible save button)
         DrawSaveOptions(saveOptions);
+
+        // Draw the legend
+        DrawLegend();
 
         EndDrawing();
     }
