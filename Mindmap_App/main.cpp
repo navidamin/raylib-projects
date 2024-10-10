@@ -196,9 +196,12 @@ void DrawNodeAndChildren(Node* node, Node* hoverNode, Vector2 mousePos, bool* ad
             if (CheckCollisionPointCircle(mousePos, circlePos, 5 / zoom)) {
                 DrawText("Add Child", mousePos.x + 10 / zoom, mousePos.y + 10 / zoom, 20 / zoom, BLACK);
                 if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !*addPointClicked) {
+                    // Calculate the new node position
+                    float distanceMultiplier = 1.5f; // Increase this value to place nodes further apart
+                    float additionalOffset = 50.0f; // Additional fixed offset
                     Vector2 newPos = {
-                        node->position.x + cosf(angle) * node->width,
-                        node->position.y + sinf(angle) * node->height
+                        node->position.x + cosf(angle) * (node->width/2 * distanceMultiplier + additionalOffset),
+                        node->position.y + sinf(angle) * (node->height/2 * distanceMultiplier + additionalOffset)
                     };
                     Node* newNode = new Node(newPos, 100, 60, node, node->level + 1);
                     UpdateNodeSize(newNode);
