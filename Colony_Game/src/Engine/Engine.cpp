@@ -1,7 +1,7 @@
 #include "Engine.h"
 #include <iostream>
 
-Engine::Engine(int screenWidth, int screenHeight, const char* title)
+Engine::Engine(int screenWidth, int screenHeight, const char* title) 
     : screenWidth(screenWidth), screenHeight(screenHeight), currentState(GameState::MENU) {
     InitWindow(screenWidth, screenHeight, title);
     SetTargetFPS(60);
@@ -9,6 +9,12 @@ Engine::Engine(int screenWidth, int screenHeight, const char* title)
 
 Engine::~Engine() {
     CloseWindow();
+}
+
+void Engine::InitGame() {
+    // Initialize game components
+    // This is a placeholder, you'll need to implement the actual initialization logic
+    std::cout << "Game initialized" << std::endl;
 }
 
 void Engine::Run() {

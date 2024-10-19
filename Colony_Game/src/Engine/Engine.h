@@ -3,7 +3,6 @@
 
 #include "raylib.h"
 
-// Game states
 enum class GameState {
     MENU,
     PLANET_VIEW,
@@ -17,12 +16,13 @@ public:
     Engine(int screenWidth, int screenHeight, const char* title);
     ~Engine();
 
+    void InitGame();
     void Run();
 
 private:
+    void HandleInput();
     void Update();
     void Draw();
-    void HandleInput();
 
     int screenWidth;
     int screenHeight;
