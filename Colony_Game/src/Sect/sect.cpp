@@ -16,7 +16,7 @@ void Sect::AddUnit(Unit* unit) {
     std::cout << "New unit added to the sect." << std::endl;
 }
 
-void Sect::CalculateProduction() {
+void Sect::AddUnit(Unit* unit) {
     // TODO: Implement production calculation based on all units
     std::cout << "Sect production calculated." << std::endl;
 }
@@ -59,4 +59,26 @@ void Sect::CreateInitialUnits() {
     }
 
     std::cout << "All initial units created for the sect." << std::endl;
+}
+
+void Sect::Draw(Vector2 position) {
+    float coreRadius = GetScreenHeight() * 0.3f;  // 60% of window height
+
+    // Draw the main core circle
+    DrawCircle(position.x, position.y, coreRadius, LIGHTGRAY);
+    DrawCircleLines(position.x, position.y, coreRadius, BLACK);
+
+    // Draw the smaller circles representing units
+    for (size_t i = 0; i < units.size(); ++i) {
+        units[i]->DrawInSectView(position, coreRadius, i);
+    }
+
+    // Draw the transparent right panel
+    DrawTransparentRightPanel();
+}
+
+void Sect::DrawTransparentRightPanel() {
+    int panelWidth = 100;
+    Rectangle panel = { (float)GetScreenWidth() - panelWidth, 0, (float)panelWidth, (float)GetScreenHeight() };
+    DrawRectangleRec(panel, Fade(WHITE, 0.5f));
 }

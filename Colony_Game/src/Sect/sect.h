@@ -1,6 +1,7 @@
 #ifndef SECT_H
 #define SECT_H
 
+#include "raylib.h"
 #include <vector>
 #include <utility>
 #include <map>
@@ -17,6 +18,11 @@ public:
     void BuildUnit(std::string unit_type);
     void UpgradeUnit(Unit* unit);
     void Update();
+    void Draw(Vector2 position);
+    void DrawTransparentRightPanel();
+
+    Vector2 GetPosition() const;
+    void SetPosition(Vector2 position);
 
 private:
     std::vector<Unit*> units;
