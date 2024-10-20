@@ -33,6 +33,21 @@ void Colony::UnlockResearch() {
     // TODO: Implement unlocking of new technologies based on research level
 }
 
+void Colony::Draw() {
+    // Calculate the colony's centroid
+    Vector2 centroid = CalculateCentroid();
+
+    // Translate the drawing to center the colony
+    Vector2 screenCenter = { GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
+    Vector2 translation = { screenCenter.x - centroid.x, screenCenter.y - centroid.y };
+
+    // Draw each sect inside the colony
+    for (const auto& sect : sects) {
+        Vector2 sectPos = { sect->GetPosition().x + translation.x, sect->GetPosition().y + translation.y };
+        sect->Draw(sectPos);
+    }
+}
+
 Vector2 Colony::CalculateCentroid() {
     // Implement centroid calculation logic here
     // For now, we'll just return a dummy value

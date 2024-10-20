@@ -1,6 +1,7 @@
 #ifndef COLONY_H
 #define COLONY_H
 
+#include "raylib.h"
 #include <vector>
 #include <utility>
 #include "sect.h"
@@ -14,6 +15,7 @@ public:
     void BuildRoad(Sect* sect_a, Sect* sect_b);
     void ManageResources();
     void UnlockResearch();
+    void Draw();
     Vector2 CalculateCentroid();
 
 private:
