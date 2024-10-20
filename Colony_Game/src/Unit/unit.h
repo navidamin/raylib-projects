@@ -1,6 +1,7 @@
 #ifndef UNIT_H
 #define UNIT_H
 
+#include "raylib.h"
 #include <string>
 #include <map>
 #include <vector>
@@ -17,6 +18,8 @@ public:
     std::map<std::string, float> CalculateProduction() const;
     void DisplayStats() const;
     void Update();
+    void DrawInSectView(Vector2 corePosition, float coreRadius, int index);
+    void DrawInUnitView();
     void SetInitialParameters();
 
     std::string GetStatus() const { return status; }

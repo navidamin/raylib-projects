@@ -1,5 +1,6 @@
 #include "unit.h"
 #include <iostream>
+#include <cmath>
 
 Unit::Unit(std::string type) : unit_type(type), status("inactive"), energy_cost(0) {
     SetInitialParameters();
@@ -46,6 +47,35 @@ void Unit::DisplayStats() const {
 void Unit::Update() {
     // TODO: Implement unit update logic
     std::cout << "Unit " << unit_type << " updated." << std::endl;
+}
+
+void Unit::DrawInSectView(Vector2 corePosition, float coreRadius, int index) {
+    float angle = (index * 45.0f) * DEG2RAD;  // 8 units evenly spaced (360/8 = 45 degrees)
+    float radius = coreRadius * 1.2f;  // Distance from the core
+
+    Vector2 unitPosition = {
+        corePosition.x + radius * cosf(angle),
+        corePosition.y + radius * sinf(angle)
+    };
+
+    // Draw the unit circle
+    float unitRadius = 30;
+    DrawCircleV(unitPosition, unitRadius, isBuilt ? BLUE : BLANK);
+    DrawCircleLines(unitPosition.x, unitPosition.y, unitRadius, GREEN);
+}
+
+void Unit::DrawInUnitView() {
+    // Left control panel (rectangle)
+    Rectangle controlPanel = { 0, 0, 300, (float)GetScreenHeight() };
+    DrawRectangleRec(controlPanel, GRAY);
+
+    // Right transparent panel
+    Rectangle transparentPanel = { (float)GetScreenWidth() - 100, 0, 100, (float)GetScreenHeight() };
+    DrawRectangleRec(transparentPanel, Fade(WHITE, 0.5f));
+
+    // Draw additional UI elements inside the control panel (e.g., unit stats)
+    DrawText(("Unit Type: " + unitType).c_str(), 10, 10, 20, BLACK);
+    // Add more UI elements as needed
 }
 
 void Unit::SetInitialParameters() {
@@ -113,3 +143,4 @@ void Unit::SetInitialParameters() {
         parameters["UpgradeEffect"] = 0.05;
     }
 }
+
