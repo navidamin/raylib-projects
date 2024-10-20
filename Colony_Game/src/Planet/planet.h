@@ -1,6 +1,7 @@
 #ifndef PLANET_H
 #define PLANET_H
 
+#include "raylib.h"
 #include <vector>
 #include <map>
 #include <utility>
@@ -15,6 +16,8 @@ public:
     void AddColony(Colony* colony);
     std::vector<std::string> GetResourceInfo(std::pair<int, int> location) const;
     void Update();
+    void Draw();
+    void DrawPlanetGrid();
 
 private:
     std::vector<std::vector<int>> map; // 2D grid representing the planet's surface

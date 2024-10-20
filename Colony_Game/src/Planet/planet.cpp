@@ -35,3 +35,21 @@ void Planet::Update() {
     // TODO: Implement update logic (e.g., trigger events, update colonies)
     std::cout << "Planet updated. Current time: " << time << std::endl;
 }
+
+
+void Planet::Draw() {
+    // Draw the planet background and grid
+    DrawPlanetGrid();
+    for (const auto& colony : colonies) {
+        colony->Draw();  // Call Colony's Draw() for each colony
+    }
+}
+
+void Planet::DrawPlanetGrid() {
+    // Implement planet grid drawing logic here
+    // For example:
+    for (int i = 0; i < 100; i++) {
+        DrawLine(i * 10, 0, i * 10, GetScreenHeight(), LIGHTGRAY);
+        DrawLine(0, i * 10, GetScreenWidth(), i * 10, LIGHTGRAY);
+    }
+}
