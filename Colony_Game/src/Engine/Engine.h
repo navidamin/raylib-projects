@@ -2,13 +2,18 @@
 #define ENGINE_H
 
 #include "raylib.h"
+#include "Planet.h"
+#include "Colony.h"
+#include "Sect.h"
+#include "Unit.h"
+#include <vector>
 
-enum class GameState {
-    MENU,
-    PLANET_VIEW,
-    COLONY_VIEW,
-    SECT_VIEW,
-    UNIT_VIEW
+enum class View {
+    Menu,
+    Planet,
+    Colony,
+    Sect,
+    Unit
 };
 
 class Engine {
@@ -24,9 +29,28 @@ private:
     void Update();
     void Draw();
 
+    bool IsDoubleClick();
+    void SwitchToColonyView();
+    void SwitchToSectView();
+    void SwitchToUnitView();
+    void SwitchToPlanetView();
+    void SelectColony(Vector2 mousePosition);
+    void SelectSect(Vector2 mousePosition);
+    void SelectUnit(Vector2 mousePosition);
+
     int screenWidth;
     int screenHeight;
-    GameState currentState;
+    View currentView;  // Changed from currentState to currentView
+
+    Planet* planet;
+    std::vector<Colony*> colonies;
+    Colony* currentColony;
+    Sect* currentSect;
+    Unit* currentUnit;
+
+    // Double-click detection
+    double lastClickTime;
+    Vector2 lastClickPosition;
 };
 
 #endif // ENGINE_H
