@@ -66,7 +66,7 @@ void Engine::SwitchToPlanetView() {
 void Engine::SelectColony(Vector2 mousePosition) {
     // Logic to determine which colony was clicked
     for (auto& colony : colonies) {
-        if (Vector2Distance(mousePosition, colony->GetPosition()) <= colony->GetRadius()) {
+        if (Vector2Distance(mousePosition, colony->GetCentroid()) <= colony->GetRadius()) {
             currentColony = colony;
             SwitchToColonyView();
             break;
@@ -168,13 +168,15 @@ void Engine::Draw() {
             DrawText("Press ENTER to start", GetScreenWidth()/2 - MeasureText("Press ENTER to start", 20)/2, GetScreenHeight()/2, 20, GRAY);
             break;
         case View::Planet:
-            planet->Draw();
+            planet->Draw(camera.zoom);
             DrawText("Planet View", 10, 10, 20, BLACK);
             DrawText("Press C for Colony View", 10, 40, 20, GRAY);
             break;
         case View::Colony:
             if (currentColony) {
-                currentColony->Draw();
+                for (auto& sect : currentColony->GetSects()) {
+                    sect->DrawInColonyView(sect->GetPosition(), camera.zoom);
+                }
             }
             DrawText("Colony View", 10, 10, 20, BLACK);
             DrawText("Press S for Sect View", 10, 40, 20, GRAY);
@@ -182,7 +184,7 @@ void Engine::Draw() {
             break;
         case View::Sect:
             if (currentSect) {
-                currentSect->Draw(Vector2{GetScreenWidth()/2.0f, GetScreenHeight()/2.0f});
+                currentSect->DrawInSectView(Vector2{GetScreenWidth()/2.0f, GetScreenHeight()/2.0f});
             }
             DrawText("Sect View", 10, 10, 20, BLACK);
             DrawText("Press U for Unit View", 10, 40, 20, GRAY);

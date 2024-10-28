@@ -15,7 +15,6 @@ public:
     void BuildRoad(Sect* sect_a, Sect* sect_b);
     void ManageResources();
     void UnlockResearch();
-    void Draw();
     void Draw(float scale);
     void CalculateCentroid();
 
@@ -24,6 +23,8 @@ public:
     float GetRadius() const {return jurisdiction_radius;}
     const std::vector<Sect*>& GetSects() const {return sects;}
 
+
+
 private:
     std::vector<Sect*> sects;
     Vector2 centroid;
@@ -31,6 +32,8 @@ private:
     std::map<std::string, int> available_resources;
     std::vector<std::pair<Sect*, Sect*>> roads;
     int research_level;
+
+
     // Add transport_network when implemented
 };
 

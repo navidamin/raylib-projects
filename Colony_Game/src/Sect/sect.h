@@ -6,6 +6,7 @@
 #include <utility>
 #include <map>
 #include "unit.h"
+#include <cmath>  // Add this for cosf, sinf, etc.
 
 class Sect {
 public:
@@ -19,21 +20,31 @@ public:
     void UpgradeUnit(Unit* unit);
     void Update();
     void Draw(Vector2 position);
-    void DrawTransparentRightPanel();
+    void DrawInColonyView(Vector2 position, float scale);
+    void DrawInSectView(Vector2 position);
 
-    Vector2 GetPosition() const;
-    void SetPosition(Vector2 position);
+    // Setters
+    void SetPosition(Vector2 position) {SectPosition = position;}
+
+    // Getters
+    Vector2 GetPosition() const {return SectPosition;}
+    const std::vector<Unit*>& GetUnits() const { return units; }
+    float GetRadius() const { return radius; }
 
 private:
+    Vector2 SectPosition;
+    float radius;
     std::vector<Unit*> units;
     Unit* core; // The Core Unit
     std::pair<int, int> location;
-    int color; // Unique color identifier
+    Color color; // Unique color identifier
     std::vector<std::string> production_priority;
     std::map<std::string, int> resources;
     float development_percentage;
 
     void CreateInitialUnits();
+    void DrawTransparentRightPanel();
+    void DrawResourceStats(Vector2 position, float coreRadius);
 };
 
 #endif // SECT_H

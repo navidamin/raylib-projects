@@ -37,11 +37,11 @@ void Planet::Update() {
 }
 
 
-void Planet::Draw() {
+void Planet::Draw(float scale) {
     // Draw the planet background and grid
     DrawPlanetGrid();
     for (const auto& colony : colonies) {
-        colony->Draw();  // Call Colony's Draw() for each colony
+        colony->Draw(scale);  // Call Colony's Draw() for each colony
     }
 }
 

@@ -16,7 +16,7 @@ public:
     void AddColony(Colony* colony);
     std::vector<std::string> GetResourceInfo(std::pair<int, int> location) const;
     void Update();
-    void Draw();
+    void Draw(float scale);
     void DrawPlanetGrid();
 
 private:
