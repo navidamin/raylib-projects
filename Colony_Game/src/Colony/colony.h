@@ -21,6 +21,8 @@ public:
 
     // Getters
     Vector2 GetCentroid() const {return centroid;}
+    float GetRadius() const {return jurisdiction_radius;}
+    const std::vector<Sect*>& GetSects() const {return sects;}
 
 private:
     std::vector<Sect*> sects;

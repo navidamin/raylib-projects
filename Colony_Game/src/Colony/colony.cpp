@@ -1,7 +1,7 @@
 #include "colony.h"
 #include <iostream>
 
-Colony::Colony() : jurisdiction_radius(3), research_level(0) {
+Colony::Colony() : jurisdiction_radius(3.0f), research_level(0) {
     // Initialize other members as needed
 }
 
