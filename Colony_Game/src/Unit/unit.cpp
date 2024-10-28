@@ -59,6 +59,7 @@ void Unit::DrawInSectView(Vector2 corePosition, float coreRadius, int index) {
     };
 
     // Draw the unit circle
+    bool isBuilt = (status == "active");
     float unitRadius = 30;
     DrawCircleV(unitPosition, unitRadius, isBuilt ? BLUE : BLANK);
     DrawCircleLines(unitPosition.x, unitPosition.y, unitRadius, GREEN);
@@ -74,7 +75,7 @@ void Unit::DrawInUnitView() {
     DrawRectangleRec(transparentPanel, Fade(WHITE, 0.5f));
 
     // Draw additional UI elements inside the control panel (e.g., unit stats)
-    DrawText(("Unit Type: " + unitType).c_str(), 10, 10, 20, BLACK);
+    DrawText(("Unit Type: " + unit_type).c_str(), 10, 10, 20, BLACK);
     // Add more UI elements as needed
 }
 

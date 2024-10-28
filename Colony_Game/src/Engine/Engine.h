@@ -2,10 +2,11 @@
 #define ENGINE_H
 
 #include "raylib.h"
-#include "Planet.h"
-#include "Colony.h"
-#include "Sect.h"
-#include "Unit.h"
+#include "raymath.h"
+#include "planet.h"
+#include "colony.h"
+#include "sect.h"
+#include "unit.h"
 #include <vector>
 
 enum class View {
@@ -38,6 +39,7 @@ private:
     void SelectSect(Vector2 mousePosition);
     void SelectUnit(Vector2 mousePosition);
 
+    Camera2D camera;
     int screenWidth;
     int screenHeight;
     View currentView;  // Changed from currentState to currentView
@@ -47,7 +49,6 @@ private:
     Colony* currentColony;
     Sect* currentSect;
     Unit* currentUnit;
-
     // Double-click detection
     double lastClickTime;
     Vector2 lastClickPosition;

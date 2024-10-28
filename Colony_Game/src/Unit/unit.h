@@ -22,10 +22,21 @@ public:
     void DrawInUnitView();
     void SetInitialParameters();
 
+    // Getters
     std::string GetStatus() const { return status; }
+    Vector2 GetUnitPosInSectView() const { return positionInSectView;}
+    float GetUnitRadiusInSectView() const { return radiusInSectView;}
+
+
+    // Setters
+    void SetUnitPosInSectView(Vector2 position) {positionInSectView = position;}
+    void SetUnitRadiusInSectView(float radius) {radiusInSectView = radius;}
     void SetStatus(const std::string& newStatus) { status = newStatus; }
 
+
 private:
+    Vector2 positionInSectView;
+    float radiusInSectView;
     std::string unit_type;
     std::map<std::string, float> parameters;
     std::map<std::string, float> consumption;

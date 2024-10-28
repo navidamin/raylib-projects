@@ -1,4 +1,5 @@
 #include "Engine.h"
+
 #include <iostream>
 
 Engine::Engine(int screenWidth, int screenHeight, const char* title)
@@ -14,9 +15,31 @@ Engine::~Engine() {
 }
 
 void Engine::InitGame() {
-    // Initialize game components
-    // This is a placeholder, you'll need to implement the actual initialization logic
-    std::cout << "Game initialized" << std::endl;
+    // Create initial colony
+    Colony* firstColony = new Colony();
+    colonies.push_back(firstColony);
+    currentColony = firstColony;
+
+    // Create initial sect with a position near the center of the map
+    Sect* firstSect = new Sect();
+    Vector2 initialPosition = {
+        static_cast<float>(screenWidth) / 2.0f,
+        static_cast<float>(screenHeight) / 2.0f
+    };
+    firstSect->SetPosition(initialPosition);
+
+    // Add sect to colony
+    currentColony->AddSect(firstSect);
+    currentSect = firstSect;
+
+    // Initialize camera to focus on the first sect
+    camera.target = initialPosition;
+    camera.offset = (Vector2){ screenWidth/2.0f, screenHeight/2.0f };
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
+
+    // Set initial view to Colony view to see the first sect
+    currentView = View::Colony;
 }
 
 void Engine::Run() {
@@ -91,7 +114,7 @@ void Engine::SelectUnit(Vector2 mousePosition) {
     // Logic to determine which unit was clicked
     if (currentSect) {
         for (auto& unit : currentSect->GetUnits()) {
-            if (Vector2Distance(mousePosition, unit->GetPosition()) <= unit->GetRadius()) {
+            if (Vector2Distance(mousePosition, unit->GetUnitPosInSectView()) <= unit->GetUnitRadiusInSectView()) {
                 currentUnit = unit;
                 SwitchToUnitView();
                 break;
@@ -156,6 +179,22 @@ void Engine::HandleInput() {
                 break;
         }
     }
+}
+
+void Engine::Update() {
+    // For now, we can leave it empty or add basic update logic
+    /*
+    if (currentColony) {
+        currentColony->Update();
+    }
+
+    if (currentSect) {
+        currentSect->Update();
+    }
+
+    if (currentUnit) {
+        currentUnit->Update();
+    }*/
 }
 
 void Engine::Draw() {
