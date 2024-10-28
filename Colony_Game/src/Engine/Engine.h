@@ -58,6 +58,7 @@ private:
 
     // Camera methods
     void UpdateCamera();
+    void ClampCamera();
     void HandleCameraControls();
     void ResetCameraForCurrentView();
     Vector2 GetWorldMousePosition();
@@ -65,6 +66,8 @@ private:
     // Constants for the world
     const float SECT_CORE_RADIUS = 50.0f;
     const int PLANET_SIZE = 20; // 20x20 grid of possible sect locations
+    const float PLANET_WIDTH = PLANET_SIZE * SECT_CORE_RADIUS * 2.0f;  // Total width of planet
+    const float PLANET_HEIGHT = PLANET_SIZE * SECT_CORE_RADIUS * 2.0f; // Total height of planet
 
     // Double-click detection
     double lastClickTime;

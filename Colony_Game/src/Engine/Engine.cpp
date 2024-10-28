@@ -209,6 +209,31 @@ void Engine::HandleInput() {
     }
 }
 
+void Engine::ClampCamera() {
+    // Calculate visible area in world coordinates
+    float visibleWidth = screenWidth / camera.zoom;
+    float visibleHeight = screenHeight / camera.zoom;
+
+    // Calculate bounds considering visible area
+    float minX = visibleWidth / 2;
+    float minY = visibleHeight / 2;
+    float maxX = PLANET_WIDTH - (visibleWidth / 2);
+    float maxY = PLANET_HEIGHT - (visibleHeight / 2);
+
+    // Adjust bounds when zoomed out
+    if (visibleWidth >= PLANET_WIDTH) {
+        camera.target.x = PLANET_WIDTH / 2;
+    } else {
+        camera.target.x = Clamp(camera.target.x, minX, maxX);
+    }
+
+    if (visibleHeight >= PLANET_HEIGHT) {
+        camera.target.y = PLANET_HEIGHT / 2;
+    } else {
+        camera.target.y = Clamp(camera.target.y, minY, maxY);
+    }
+}
+
 void Engine::HandleCameraControls() {
     // Mouse wheel zooming
     float wheel = GetMouseWheelMove();
@@ -217,16 +242,31 @@ void Engine::HandleCameraControls() {
         Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
 
         // Modify zoom
+        float prevZoom = camera.zoom;
         camera.zoom += wheel * 0.1f;
-        camera.zoom = Clamp(camera.zoom, minZoom, maxZoom);
+
+        // Calculate max zoom out to see whole planet
+        float maxZoomOut = std::min(
+            screenWidth / PLANET_WIDTH,
+            screenHeight / PLANET_HEIGHT
+        );
+
+        // Clamp zoom between max zoom out and maxZoom
+        camera.zoom = Clamp(camera.zoom, maxZoomOut, maxZoom);
 
         // Get world point after zoom
         Vector2 mouseWorldPosNew = GetScreenToWorld2D(GetMousePosition(), camera);
 
-        // Adjust camera target to zoom into mouse position
-        camera.target.x += (mouseWorldPos.x - mouseWorldPosNew.x);
-        camera.target.y += (mouseWorldPos.y - mouseWorldPosNew.y);
-    }
+        // Only adjust position if zoom actually changed
+        if (camera.zoom != prevZoom) {
+            // Get world point after zoom
+            Vector2 mouseWorldPosNew = GetScreenToWorld2D(GetMousePosition(), camera);
+
+            // Adjust camera target to zoom into mouse position
+            camera.target.x += (mouseWorldPos.x - mouseWorldPosNew.x);
+            camera.target.y += (mouseWorldPos.y - mouseWorldPosNew.y);
+        }
+    } // End if (wheel != 0)
 
     // Pan with middle mouse button
     if (IsMouseButtonPressed(MOUSE_MIDDLE_BUTTON)) {
@@ -244,6 +284,9 @@ void Engine::HandleCameraControls() {
         camera.target.y -= delta.y / camera.zoom;
     }
 
+    // Apply bounds
+    ClampCamera();
+
     // Reset view based on current mode
     if (IsKeyPressed(KEY_R)) {
         ResetCameraForCurrentView();
@@ -253,24 +296,25 @@ void Engine::HandleCameraControls() {
 void Engine::ResetCameraForCurrentView() {
     switch (currentView) {
         case View::Planet: {
-            // Show the entire planet
-            float planetWidth = SECT_CORE_RADIUS * PLANET_SIZE * 2;
-            float planetHeight = SECT_CORE_RADIUS * PLANET_SIZE * 2;
-
             // Calculate zoom to fit planet
-            float zoomX = screenWidth / planetWidth;
-            float zoomY = screenHeight / planetHeight;
-            camera.zoom = std::min(zoomX, zoomY) * 0.9f; // 90% to add some padding
+            float zoomX = screenWidth / PLANET_WIDTH;
+            float zoomY = screenHeight / PLANET_HEIGHT;
+            camera.zoom = std::min(zoomX, zoomY) * 0.95f; // 95% to add slight padding
 
             // Center on planet
-            camera.target = {planetWidth/2, planetHeight/2};
+            camera.target = {PLANET_WIDTH/2, PLANET_HEIGHT/2};
             break;
         }
+
         case View::Colony: {
             if (currentColony) {
                 // Center on colony
                 camera.target = currentColony->GetCentroid();
+
                 camera.zoom = 1.0f; // Or whatever zoom level works best for colony view
+
+                // Ensure bounds are respected
+                ClampCamera();
             }
             break;
         }
@@ -341,29 +385,35 @@ void Engine::Draw() {
                     camera
                 );
 
-                // Calculate which grid lines are visible
-                int startX = std::max(0, static_cast<int>(topLeft.x / (SECT_CORE_RADIUS * 2)));
-                int endX = std::min(PLANET_SIZE, static_cast<int>(bottomRight.x / (SECT_CORE_RADIUS * 2)) + 1);
-                int startY = std::max(0, static_cast<int>(topLeft.y / (SECT_CORE_RADIUS * 2)));
-                int endY = std::min(PLANET_SIZE, static_cast<int>(bottomRight.y / (SECT_CORE_RADIUS * 2)) + 1);
+                // Calculate grid line positions
+                float cellSize = SECT_CORE_RADIUS * 2.0f;
+                float planetWidth = PLANET_SIZE * cellSize;  // Total width of planet
+                float planetHeight = PLANET_SIZE * cellSize; // Total height of planet
 
-                // Draw only visible vertical grid lines
+                // Draw vertical grid lines
+                int startX = std::max(0, static_cast<int>(topLeft.x / cellSize));
+                int endX = std::min(PLANET_SIZE, static_cast<int>(bottomRight.x / cellSize) + 1);
+
                 for (int i = startX; i <= endX; i++) {
-                    float linePos = i * SECT_CORE_RADIUS * 2;
-                    DrawLineV(
-                        {linePos, topLeft.y},     // Start from top of screen
-                        {linePos, bottomRight.y},  // End at bottom of screen
-                        Fade(LIGHTGRAY, 0.5f)     // Semi-transparent gray
-                    );
+                    float x = i * cellSize;
+                    if (x <= planetWidth) {  // Only draw if within planet width
+                        Vector2 start = {x, 0};
+                        Vector2 end = {x, planetHeight};
+                        DrawLineV(start, end, Fade(LIGHTGRAY, 0.5f));
+                    }
                 }
 
-                // Draw only visible horizontal grid lines
+                // Draw horizontal grid lines
+                int startY = std::max(0, static_cast<int>(topLeft.y / cellSize));
+                int endY = std::min(PLANET_SIZE, static_cast<int>(bottomRight.y / cellSize) + 1);
+
                 for (int i = startY; i <= endY; i++) {
-                    float linePos = i * SECT_CORE_RADIUS * 2;
+                    float y = i * cellSize;
+                    // Draw horizontal line from 0 to planetWidth (not screen width)
                     DrawLineV(
-                        {topLeft.x, linePos},      // Start from left of screen
-                        {bottomRight.x, linePos},   // End at right of screen
-                        Fade(LIGHTGRAY, 0.5f)      // Semi-transparent gray
+                        {0, y},
+                        {planetWidth, y},
+                        Fade(LIGHTGRAY, 0.5f)
                     );
                 }
 
@@ -403,8 +453,8 @@ void Engine::Draw() {
 
 
     // Draw UI elements (not affected by camera)
-    DrawText(TextFormat("Zoom: %.2f", camera.zoom), 10, screenHeight - 15, 20, GRAY);
-    DrawText("Double-click to select", 10, GetScreenHeight() - 30, 20, DARKGRAY);
+    DrawText(TextFormat("Zoom: %.2f", camera.zoom), 10, screenHeight - 20, 20, GRAY);
+    DrawText("Double-click to select", 10, GetScreenHeight() - 40, 20, DARKGRAY);
 
 
     EndDrawing();
