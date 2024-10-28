@@ -16,12 +16,16 @@ public:
     void ManageResources();
     void UnlockResearch();
     void Draw();
-    Vector2 CalculateCentroid();
+    void Draw(float scale);
+    void CalculateCentroid();
+
+    // Getters
+    Vector2 GetCentroid() const {return centroid;}
 
 private:
     std::vector<Sect*> sects;
-    std::pair<int, int> centroid;
-    int jurisdiction_radius;
+    Vector2 centroid;
+    float jurisdiction_radius;
     std::map<std::string, int> available_resources;
     std::vector<std::pair<Sect*, Sect*>> roads;
     int research_level;

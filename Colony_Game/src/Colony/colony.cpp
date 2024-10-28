@@ -48,8 +48,30 @@ void Colony::Draw() {
     }
 }
 
-Vector2 Colony::CalculateCentroid() {
-    // Implement centroid calculation logic here
-    // For now, we'll just return a dummy value
-    return { 0.0f, 0.0f };
+void Colony::CalculateCentroid() {
+    // If there are no sects, return zero vector
+    if (sects.empty()) {
+        centroid = { 0.0f, 0.0f };
+    }
+
+    // If there's only one sect, return its position
+    if (sects.size() == 1) {
+        centroid = sects[0]->GetPosition();
+    }
+
+    // Calculate the average of all sect positions
+    float sumX = 0.0f;
+    float sumY = 0.0f;
+
+    for (const auto& sect : sects) {
+        Vector2 sectPos = sect->GetPosition();
+        sumX += sectPos.x;
+        sumY += sectPos.y;
+    }
+
+    // Update colony position with the calculated centroid
+    centroid.x = sumX / static_cast<float>(sects.size());
+    centroid.y = sumY / static_cast<float>(sects.size());
+
 }
+
