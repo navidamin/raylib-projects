@@ -4,8 +4,8 @@
 Sect::Sect()
     : core(nullptr),
       SectPosition({0, 0}),
-      radius(0),
-      color(BLUE),
+      coreRadius(0),
+      color(GRAY),
       development_percentage(0.0f)
 {
     CreateInitialUnits();
@@ -64,25 +64,24 @@ void Sect::CreateInitialUnits() {
 }
 
 void Sect::DrawInColonyView(Vector2 pos, float scale) {
-    radius = 50.0f * scale; // Scale the radius based on zoom level
+    coreRadius = defaultCoreRadius * scale; // Scale the radius based on zoom level
 
     // Draw main sect circle (smaller in Colony view)
-    DrawCircle(pos.x, pos.y, radius, color);
-    DrawCircleLines(pos.x, pos.y, radius, BLACK);
+    DrawCircle(pos.x, pos.y, coreRadius, color);
+    //DrawCircleLines(pos.x, pos.y, radius, BLACK);
 
 
 
     // Draw active units indicator as small dots around the sect
-    float indicatorRadius = radius * 0.2f;
+    float indicatorRadius = coreRadius * 0.3f;
 
     for (int i = 0; i < units.size(); i++) {
-        float angle = (i * 360.0f / units.size()) * DEG2RAD;
+        float angle = (90.0f - (i * 45.0f)) * DEG2RAD;  // 8 units, 45 degrees apart
         Vector2 indicatorPos = {
-            pos.x + (radius * 0.7f) * cosf(angle),
-            pos.y + (radius * 0.7f) * sinf(angle)
+            pos.x + (coreRadius * 1.4f) * cosf(angle),
+            pos.y - (coreRadius * 1.4f) * sinf(angle)
         };
-        units[i]->SetUnitPosInSectView(indicatorPos);
-        units[i]->SetUnitRadiusInSectView(indicatorRadius);
+
         if ( units[i]->GetStatus() == "active" ) {DrawCircle(indicatorPos.x, indicatorPos.y, indicatorRadius, GREEN);}
         else {DrawCircle(indicatorPos.x, indicatorPos.y, indicatorRadius, GRAY);}
     }
@@ -91,8 +90,8 @@ void Sect::DrawInColonyView(Vector2 pos, float scale) {
     if (development_percentage > 0) {
         DrawRing(
             pos,
-            radius * 1.1f,
-            radius * 1.2f,
+            coreRadius * 1.1f,
+            coreRadius * 1.2f,
             0,
             development_percentage * 360,
             32,

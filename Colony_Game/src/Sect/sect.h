@@ -29,11 +29,12 @@ public:
     // Getters
     Vector2 GetPosition() const {return SectPosition;}
     const std::vector<Unit*>& GetUnits() const { return units; }
-    float GetRadius() const { return radius; }
+    float GetRadius() const { return coreRadius; }
 
 private:
     Vector2 SectPosition;
-    float radius;
+    float coreRadius;
+    float defaultCoreRadius = 50.0f;
     std::vector<Unit*> units;
     Unit* core; // The Core Unit
     std::pair<int, int> location;
