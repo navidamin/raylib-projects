@@ -67,15 +67,15 @@ void Unit::DrawInSectView(Vector2 corePosition, float coreRadius, int index) {
 
 void Unit::DrawInUnitView() {
     // Left control panel (rectangle)
-    Rectangle controlPanel = { 0, 0, 300, (float)GetScreenHeight() };
-    DrawRectangleRec(controlPanel, GRAY);
+    //Rectangle controlPanel = { 0, 0, 300, (float)GetScreenHeight() };
+    //DrawRectangleRec(controlPanel, GRAY);
 
     // Right transparent panel
-    Rectangle transparentPanel = { (float)GetScreenWidth() - 100, 0, 100, (float)GetScreenHeight() };
-    DrawRectangleRec(transparentPanel, Fade(WHITE, 0.5f));
+    Rectangle transparentPanel = { (float)GetScreenWidth() - 300, 0, 300, (float)GetScreenHeight() };
+    DrawRectangleRec(transparentPanel, Fade(GRAY, 0.5f));
 
     // Draw additional UI elements inside the control panel (e.g., unit stats)
-    DrawText(("Unit Type: " + unit_type).c_str(), 10, 10, 20, BLACK);
+    DrawText(("Unit Type: " + unit_type).c_str(), (float)GetScreenWidth() - 280, 10, 20, BLACK);
     // Add more UI elements as needed
 }
 

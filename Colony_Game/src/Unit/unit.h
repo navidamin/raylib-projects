@@ -26,7 +26,7 @@ public:
     std::string GetStatus() const { return status; }
     Vector2 GetUnitPosInSectView() const { return positionInSectView;}
     float GetUnitRadiusInSectView() const { return radiusInSectView;}
-
+    std::string GetUnitType() const { return unit_type;}
 
     // Setters
     void SetUnitPosInSectView(Vector2 position) {positionInSectView = position;}
