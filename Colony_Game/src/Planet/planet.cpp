@@ -1,7 +1,7 @@
 #include "planet.h"
 #include <iostream>
 
-Planet::Planet() : size(100, 100), time(0) {
+Planet::Planet() : size(20, 20), time(0) {
     // Initialize the map with empty tiles
     map.resize(size.first, std::vector<int>(size.second, 0));
 }

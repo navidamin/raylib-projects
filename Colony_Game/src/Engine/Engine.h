@@ -39,7 +39,6 @@ private:
     void SelectSect(Vector2 mousePosition);
     void SelectUnit(Vector2 mousePosition);
 
-    Camera2D camera;
     int screenWidth;
     int screenHeight;
     View currentView;  // Changed from currentState to currentView
@@ -49,9 +48,29 @@ private:
     Colony* currentColony;
     Sect* currentSect;
     Unit* currentUnit;
+
+    // Camera state
+    Camera2D camera;
+    float minZoom;
+    float maxZoom;
+    Vector2 dragStart;
+    bool isDragging;
+
+    // Camera methods
+    void UpdateCamera();
+    void HandleCameraControls();
+    void ResetCameraForCurrentView();
+    Vector2 GetWorldMousePosition();
+
+    // Constants for the world
+    const float SECT_CORE_RADIUS = 50.0f;
+    const int PLANET_SIZE = 20; // 20x20 grid of possible sect locations
+
     // Double-click detection
     double lastClickTime;
     Vector2 lastClickPosition;
+
+
 };
 
 #endif // ENGINE_H
