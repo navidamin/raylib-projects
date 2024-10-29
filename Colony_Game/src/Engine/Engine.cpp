@@ -104,8 +104,10 @@ void Engine::SwitchToPlanetView() {
 
 void Engine::SelectColony(Vector2 mousePosition) {
     // Logic to determine which colony was clicked
+    Vector2 worldMousePos = GetScreenToWorld2D(mousePosition, camera);
+
     for (auto& colony : colonies) {
-        if (Vector2Distance(mousePosition, colony->GetCentroid()) <= colony->GetRadius()) {
+        if (Vector2Distance(worldMousePos, colony->GetCentroid()) <= colony->GetRadius()) {
             currentColony = colony;
             SwitchToColonyView();
             break;
@@ -116,8 +118,14 @@ void Engine::SelectColony(Vector2 mousePosition) {
 void Engine::SelectSect(Vector2 mousePosition) {
     // Logic to determine which sect was clicked
     if (currentColony) {
+        // Convert screen coordinates to world coordinates using the camera
+        Vector2 worldMousePos = GetScreenToWorld2D(mousePosition, camera);
+
         for (auto& sect : currentColony->GetSects()) {
-            if (Vector2Distance(mousePosition, sect->GetPosition()) <= sect->GetRadius()) {
+            Vector2 sectPos = sect->GetPosition();
+            float sectRadius = sect->GetRadius();
+
+            if (Vector2Distance(worldMousePos, sectPos) <= sectRadius) {
                 currentSect = sect;
                 SwitchToSectView();
                 break;
@@ -125,6 +133,7 @@ void Engine::SelectSect(Vector2 mousePosition) {
         }
     }
 }
+
 
 void Engine::SelectUnit(Vector2 mousePosition) {
     // Logic to determine which unit was clicked
