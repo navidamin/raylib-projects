@@ -32,17 +32,25 @@ public:
     float GetRadius() const { return coreRadius; }
 
 private:
-    Vector2 SectPosition;
-    float coreRadius;
-    float defaultCoreRadius = 50.0f;
-    std::vector<Unit*> units;
-    Unit* core; // The Core Unit
-    std::pair<int, int> location;
-    Color color; // Unique color identifier
-    std::vector<std::string> production_priority;
-    std::map<std::string, int> resources;
-    float development_percentage;
+    // Geometric/Visual properties (basic types first)
+    float defaultCoreRadius;        // Constant value
+    float coreRadius;               // Derived from default
+    Color color;                    // Visual property
 
+    // Position/Location data
+    Vector2 SectPosition;           // Position in world space
+    std::pair<int, int> location;   // Grid location
+
+    // Core gameplay elements
+    std::vector<Unit*> units;       // Collection of units
+    Unit* core;                     // Reference to core unit
+    float development_percentage;    // Progress tracking
+
+    // Resource management
+    std::vector<std::string> production_priority;  // Order of production
+    std::map<std::string, int> resources;         // Resource storage
+
+    // Private member functions
     void CreateInitialUnits();
     void DrawTransparentRightPanel();
     void DrawResourceStats(Vector2 position, float coreRadius);

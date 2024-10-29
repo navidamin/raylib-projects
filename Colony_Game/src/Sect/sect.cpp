@@ -2,11 +2,16 @@
 #include <iostream>
 
 Sect::Sect()
-    : core(nullptr),
-      SectPosition({0, 0}),
-      coreRadius(0),
+    : defaultCoreRadius(50.0f),
+      coreRadius(defaultCoreRadius),
       color(GRAY),
-      development_percentage(0.0f)
+      SectPosition({0, 0}),
+      location({0, 0}),
+      units(),
+      core(nullptr),
+      development_percentage(0.0f),
+      production_priority(),
+      resources()
 {
     CreateInitialUnits();
 }
@@ -75,7 +80,7 @@ void Sect::DrawInColonyView(Vector2 pos, float scale) {
     // Draw active units indicator as small dots around the sect
     float indicatorRadius = coreRadius * 0.3f;
 
-    for (int i = 0; i < units.size(); i++) {
+    for (size_t i = 0; i < units.size(); i++) {
         float angle = (90.0f - (i * 45.0f)) * DEG2RAD;  // 8 units, 45 degrees apart
         Vector2 indicatorPos = {
             pos.x + (coreRadius * 1.4f) * cosf(angle),
