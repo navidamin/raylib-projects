@@ -3,11 +3,11 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include <vector>
 #include "planet.h"
 #include "colony.h"
 #include "sect.h"
 #include "unit.h"
-#include <vector>
 
 enum class View {
     Menu,
@@ -62,6 +62,8 @@ private:
     void HandleCameraControls();
     void ResetCameraForCurrentView();
     Vector2 GetWorldMousePosition();
+    void UpdatePlanetActiveArea();
+
 
     // Constants for the world
     const float SECT_CORE_RADIUS = 50.0f;
